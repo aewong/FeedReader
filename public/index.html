@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple RSS Feed Reader</title>
+    <script src="script.js"> </script>
+    <script>
+        var theUser = "test";
+        var allSubs = null;
+        var currentSub = null; //current feed that is open
+        var currentSubLink = null; //link for current feed that is open
+
+        var startUp = function() {
+            loadMySubs();
+        }
+
+        var loadMySubs = function() {
+            var url = "./listSubs?user=" + theUser;
+
+            loadURL(url, function(data) {
+                var mySubs = JSON.parse(data);
+                
+                allSubs = mySubs;
+                    
+                if (mySubs.length == 0) {
+                    //Clear out content and hide Delete Feed button
+                    document.getElementById("myFeedList").innerHTML = "No subsciptions";
+                    document.getElementById("currFeedTitle").innerHTML = "Current Feed";
+                    document.getElementById("currFeedList").innerHTML = "";
+                    document.getElementById("currPostTitle").innerHTML = "Feed Details";
+                    document.getElementById("feedDetails").innerHTML = "";
+                    document.getElementById("deleteButton").style.visibility = "hidden";
+                }
+                else {
+                    var markUp = "<ol>"; //each feed will be a list item
+
+                    for (var i = 0; i < mySubs.length; i++) {
+                        var mySub = mySubs[i];
+                    
+                        markUp += "<li><a href='javascript:openSub(" + i + ")'>" + mySub.id + "</a></li>";
+                    }
+                    
+                    markUp += "</ol>";
+
+                    document.getElementById("myFeedList").innerHTML = markUp;
+                    
+                    openSub(0); //open first feed
+                }
+            });
+        }
+    
+        var addSub = function() {
+            //Prompt user for RSS feed URL
+            var link = prompt("Enter an RSS feed URL", "https://itunes.apple.com/us/rss/topaudiobooks/limit=10/xml");
+            
+            if (link != null && link.indexOf("/xml") > -1) {
+                link = link.replace("/xml", "/json"); //get JSON format
+                
+                var id = "No Title";
+                var url = "./getAllPosts?link=" + link;
+                
+                loadURL(url, function(data) {
+                    var sub = JSON.parse(data).feed;
+                    console.log(sub);
+                    
+                    id = sub.title.label; //get feed title to display in myFeedList
+                    
+                    url = "./addOrEditSub?user=" + theUser + "&id=" + id + "&link=" + link;
+                    
+                    loadURL(url, function(data) {
+                        var res = data;
+                        
+                        if (res == "0") {
+                            console.log("Error adding sub");
+                        }
+                        else {
+                            loadMySubs(); //refresh myFeedList
+                        }
+                    });
+                });
+            }
+            else {
+                console.log("Error adding feed: Invalid RSS feed URL");
+            }
+        }
+    
+        var deleteSub = function() {
+            var url = "./deleteSub?user=" + theUser + "&link=" + currentSubLink;
+            
+            loadURL(url, function(data) {
+                var res = data;
+                
+                if (res == "0") {
+                    console.log("Error deleting sub");
+                }
+                else {
+                    loadMySubs(); //refresh myFeedList
+                }
+            });
+        }
+    
+        var openSub = function(index) {
+            var subToOpen = allSubs[index];
+            var subLink = subToOpen.link;
+            
+            currentSubLink = subLink;
+            
+            var url = "./getAllPosts?link=" + currentSubLink;
+            
+            loadURL(url, function(data) {
+                var sub = JSON.parse(data).feed;
+                
+                currentSub = sub;
+                
+                document.getElementById("currFeedTitle").innerHTML = currentSub.title.label; //display feed title in header
+                
+                var posts = currentSub.entry; //get all posts in feed
+                
+                if (posts) {
+                    var numPosts = posts.length; //number of posts in feed
+                        
+                    if (numPosts == 0) {
+                        document.getElementById("currFeedList").innerHTML = "No posts";
+                    }
+                    else {
+                        var markUp = "<ol>"; //each post wll be a list item
+                        
+                        for (var i = 0; i < numPosts; i++) {
+                            var post = posts[i];
+                        
+                            markUp += "<li><a href='javascript:openPost(" + i + ")'>" + post.title.label + "</a></li>";
+                        }
+                        
+                        markUp += "</ol>";
+                        
+                        document.getElementById("currFeedList").innerHTML = markUp;
+                        
+                        openPost(0); //open first post
+                    }
+                }
+                else {
+                    //Clear out content
+                    document.getElementById("currFeedList").innerHTML = "No posts";
+                    document.getElementById("currPostTitle").innerHTML = "Feed Details";
+                    document.getElementById("feedDetails").innerHTML = "";
+                }
+                
+                document.getElementById("deleteButton").style.visibility = "visible"; //show Delete Feed button
+            });
+        }
+    
+        var openPost = function(index) {
+            var postToOpen = currentSub.entry[index];
+            
+            //Get post name and display in header
+            var name = postToOpen["im:name"].label;
+            document.getElementById("currPostTitle").innerHTML = name;
+            
+            //Get image for post and set its height
+            var image = postToOpen["im:image"][2].label;
+            var imageHeight = postToOpen["im:image"][2].attributes.height;
+            var markUp_image = "<p><img src='" + image + "' style='height: " + imageHeight + "px;'></p>";
+            
+            //Get artist name and add link (if available)
+            var artist = postToOpen["im:artist"].label;
+            var artistLink = postToOpen["im:artist"].attributes;
+            var markUp_artist = "<p><b>Artist(s): </b>";
+            
+            if (artistLink) {
+                markUp_artist += "<a target='_blank' href='" + artistLink.href + "'>" + artist + "</a></p>";
+            }
+            else {
+                markUp_artist += artist + "</p>";
+            }
+            
+            //Get release date
+            var releaseDate = postToOpen["im:releaseDate"].attributes.label;
+            var markUp_releaseDate = "<p><b>Release Date: </b>" + releaseDate + "</p>";
+            
+            //Get price
+            var price = postToOpen["im:price"].label;
+            
+            if (price == "Get") {
+                price = "Free";
+            }
+            
+            var markUp_price = "<p><b>Price: </b>" + price + "</p>";
+            
+            //Get category
+            var category = postToOpen.category.attributes.label;
+            var categoryLink = postToOpen.category.attributes.scheme;
+            var markUp_category = "<p><b>Category: </b><a target='_blank' href='" + categoryLink + "'>" + category + "</a></p>";
+            
+            //Get summary (if available)
+            var summary = postToOpen.summary;
+            var markUp_summary = "<p><b>Summary: </b>";
+            
+            if (summary) {
+                markUp_summary += summary.label + "</p>";
+            }
+            else {
+                markUp_summary += "Unavailable</p>";
+            }
+            
+            //Create button with link to the iTunes page
+            var fullLink = postToOpen.id.label;
+            var markUp_fullLink = "</br><div class='centeredButton'><a target='_blank' href='" + fullLink + "' class='button'>View on iTunes</a></div>";
+            
+            var markUp = markUp_image + markUp_artist + markUp_releaseDate + markUp_price + markUp_category + markUp_summary + markUp_fullLink;
+            
+            document.getElementById("feedDetails").innerHTML = markUp;
+        }
+    </script>
+    <style>
+        html, body {
+            height: 100%;
+        }
+    
+        body {
+            background-color: #F0F0F0;
+            font-family: "Verdana";
+            font-size: 12px;
+            text-align: center;
+        }
+    
+        h1 {
+            display: table-cell;
+            vertical-align: middle;
+            height: 100%;
+            font-size: 24px;
+        }
+    
+        ol {
+            padding-left: 20px;
+            text-align: left;
+        }
+    
+        img {
+            display: block;
+            margin: 0 auto;
+        }
+    
+        .header {
+            display: table;
+            height: 15%;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+    
+        .content {
+            height: 75%;
+            padding: 20px;
+            overflow: auto;
+            background-color: white;
+            border: 1px solid;
+            border-radius: 5px;
+            border-color: #D0D0D0;
+        }
+    
+        .centeredButton {
+            text-align: center;
+        }
+    
+        .button {
+            padding: 5px;
+            background-color: #F0F0F0;
+            color: black;
+            border: 1px solid;
+            border-radius: 5px;
+            border-color: #D0D0D0;
+            text-decoration: none;
+        }
+    
+        #myFeedWrapper, #currFeedWrapper {
+            display: inline-block;
+            vertical-align: top;
+            height: 100%;
+            width: 25%;
+            margin-right: 15px;
+            border-color: #D0D0D0;
+        }
+    
+        #selFeedWrapper {
+            display: inline-block;
+            vertical-align: top;
+            height: 100%;
+            width: 45%;
+        }
+    </style>
+</head>
+<body onload="startUp()">
+    <div id="myFeedWrapper">
+        <div class="header"><h1>My Feeds</h1></div>
+        <div class="content">
+            <div class="centeredButton"><a href="javascript:addSub()" class="button">Add Feed</a></div>
+            </br>
+            <div id="myFeedList"> </div>
+        </div>
+    </div>
+    <div id="currFeedWrapper">
+        <div class="header"><h1 id="currFeedTitle">Current Feed</h1></div>
+        <div class="content">
+            <div class="centeredButton"><a href="javascript:deleteSub()" id="deleteButton" class="button" style="visibility: hidden;">Delete Feed</a></div>
+            </br>
+            <div id="currFeedList"> </div>
+        </div>
+    </div>
+    <div id="selFeedWrapper">
+        <div class="header"><h1 id="currPostTitle">Feed Details</h1></div>
+        <div class="content">
+            <div id="feedDetails"> </div>
+        </div>
+    </div>
+</body>
+</html>
