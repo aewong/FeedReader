@@ -38,9 +38,8 @@ function loadURL(filename, callback) {
             if (allData == "noauth") {
                 alert("Your session has expired. Relogin to continue.");
                 window.location.reload();
+                callback(allData)
             }
-            
-            callback(allData)
         };
         
         aXMLHttpRequest.send(null);
