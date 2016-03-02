@@ -8,11 +8,11 @@ var hostname = process.env.HOSTNAME || "localhost";
 var port = 8080;
 var db = require("./node_modules/mongoskin").db("mongodb://user:password@127.0.0.1:27017/RSSFeed");
 
-app.get("/", function (req, res) {
+app.get("/", function(req, res) {
     res.redirect("/index.html");
 });
 
-app.get("/getAllPosts", function (req, res) {
+app.get("/getAllPosts", function(req, res) {
     var link = decodeURIComponent(req.query.link);
         
     readURL(link, function(data) {
