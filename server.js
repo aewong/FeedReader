@@ -1,4 +1,5 @@
 var express = require("express");
+var userLib = require("./user.js");
 var app = express();
 var bodyParser = require("body-parser");
 var errorHandler = require("errorhandler");
@@ -78,6 +79,26 @@ app.get("/addOrEditSub", function(req, res){
             });
         }
     });
+});
+
+app.get("/createUser", function(req, res) {
+    userLib.add(req, res, db);
+});
+
+app.get("/editUser", function(req, res) {
+    userLib.edit(req, res, db);
+});
+
+app.get("/changePassword", function(req, res) {
+    userLib.changePassword(req, res, db);
+});
+
+app.get("/login", function(req, res) {
+    userLib.login(req, res, db);
+});
+
+app.get("/getUser", function(req, res) {
+    userLib.get(req, res, db);
 });
 
 function readURL(url, cb) {
