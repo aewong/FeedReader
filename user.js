@@ -39,7 +39,7 @@ function addUser(req, res, db) {
     });
 }
 
-function getUser(req, res, db){
+function getUser(req, res, db) {
     auth.restrict(req, res, db, function(ret) {
         if (ret) {
             var info = req.query;
