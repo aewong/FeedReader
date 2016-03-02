@@ -29,11 +29,18 @@ function loadURL(filename, callback) {
     if (aXMLHttpRequest) {
         aXMLHttpRequest.open("GET", filename, true);
         
-        aXMLHttpRequest.onreadystatechange = function (aEvt) {
+        aXMLHttpRequest.onreadystatechange = function(aEvt) {
             if (aXMLHttpRequest.readyState == 4) {
                 allData = aXMLHttpRequest.responseText;
-                callback(allData)
+                callback(allData);
             }
+            
+            if (allData == "noauth") {
+                alert("Your session has expired. Relogin to continue.");
+                window.location.reload();
+            }
+            
+            callback(allData)
         };
         
         aXMLHttpRequest.send(null);
