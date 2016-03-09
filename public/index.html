@@ -12,17 +12,165 @@
     <script src="scripts/script.js"></script>
     
     <script>
-        var theUser = "test";
+        var user = null;
         var allSubs = null;
         var currentSub = null; //current feed that is open
         var currentSubLink = null; //link for current feed that is open
 
         var startUp = function() {
-            loadMySubs();
+            checkBrowsers();
+            showLogin();
         }
+    
+        var checkBrowsers = function() {
+            $.reject({
+                reject: {
+                    msie: 7, //reject Internet Explorer 7 and below
+                    opera: true,
+                    konqueror: true,
+                    unknown: true
+                },
+                header: "Unsupported Browser",
+                paragraph1: "Your browser is not supported and some features on this website may not work correctly.",
+                paragraph2: "For the best possible experience, we recommend using the latest version of one of the options below.",
+                display: ["chrome", "firefox", "safari", "msie"]
+            });
+        }
+    
+        var showLogin = function() {
+            Ply.factory("login", function(options, data, resolve) {
+                options.flags = {
+                    closeBtn: false,
+                    closeByEsc: true,
+                    closeByOverlay: true,
+                    visibleOverlayInStack: true
+                };
 
-        var loadMySubs = function() {
-            var url = "./listSubs?user=" + theUser;
+                options.onaction = function(ui) {
+                    var data = ui.data;
+                    
+                    //Get email and password
+                    var tempUser = data.email;
+                    var password = data.password;
+                    
+                    var url = "./login?user=" + tempUser + "&password=" + password;
+                    
+                    loadURL(url, function(data) {
+                        var res = data;
+                        
+                        if (res == "1") {
+                            user = tempUser;
+                        }
+                        else {
+                            console.log("Error logging in");
+                        }
+                    });
+                };
+
+                Ply.factory.use("base", options, {
+                    title: "Login",
+                    form: {
+                        email: "E-mail",
+                        password: {hint: "Password", type: "password"},
+                    },
+                    ok: "Enter",
+                    cancel: false
+                }, resolve);
+            });
+            
+            Ply.dialog("login").done(function(ui) {
+                login();
+            });
+        }
+    
+        var showSignUp = function() {
+            Ply.factory("login", function(options, data, resolve) {
+                options.flags = {
+                    closeBtn: false,
+                    closeByEsc: true,
+                    closeByOverlay: true,
+                    visibleOverlayInStack: true
+                };
+
+                options.onaction = function(ui) {
+                    var data = ui.data;
+                    
+                    //Get email and password
+                    var tempUser = data.email;
+                    var password = data.password;
+                    
+                    var url = "./addUser?user=" + tempUser + "&password=" + password;
+                    
+                    loadURL(url, function(data) {
+                        var res = data;
+                        
+                        if (res == "1") {
+                            user = tempUser;
+                        }
+                        else {
+                            console.log("Error signing up");
+                        }
+                    });
+                };
+
+                Ply.factory.use("base", options, {
+                    title: "Sign Up",
+                    form: {
+                        email: "E-mail",
+                        password: {hint: "Password", type: "password"},
+                    },
+                    ok: "Enter",
+                    cancel: false
+                }, resolve);
+            });
+
+            Ply.dialog("login").done(function(ui) {
+                login();
+            });
+        }
+    
+        var login = function() {
+            user = "test"; //TEST
+            
+            if (user != null) {
+                //Display user in top right corner
+                document.getElementById("username").innerHTML = user;
+                
+                //Change login button to logout
+                document.getElementById("loginButton").innerHTML = "Logout";
+                document.getElementById("loginButton").href = "javascript:logout()";
+                
+                //Hide sign up button
+                document.getElementById("signUpButton").style.visibility = "hidden";
+                
+                //Show add button and feed list
+                document.getElementById("addButton").style.visibility = "visible";
+                
+                loadMySubs(0); //open first feed after loading
+            }
+        }
+    
+        var logout = function() {
+            //Clear out user
+            user = null;
+            document.getElementById("username").innerHTML = "";
+            
+            //Change logout button to login
+            document.getElementById("loginButton").innerHTML = "Login";
+            document.getElementById("loginButton").href = "javascript:showLogin()";
+            
+            //Show sign up button
+            document.getElementById("signUpButton").style.visibility = "visible";
+            
+            //Hide add button and feed list
+            document.getElementById("addButton").style.visibility = "hidden";
+            document.getElementById("myFeedList").innerHTML = "Login or sign up to view your feeds!";
+            
+            loadMySubs(-1); //no feeds to open
+        }
+    
+        var loadMySubs = function(subIndexToOpen) {
+            var url = "./listSubs?user=" + user;
 
             loadURL(url, function(data) {
                 var mySubs = JSON.parse(data);
@@ -30,13 +178,17 @@
                 allSubs = mySubs;
                     
                 if (mySubs.length == 0) {
-                    //Clear out content and hide Delete Feed button
-                    document.getElementById("myFeedList").innerHTML = "No subsciptions";
+                    if (subIndexToOpen > -1) {
+                        document.getElementById("myFeedList").innerHTML = "No subsciptions";
+                    }
+                    
+                    //Clear out content
                     document.getElementById("currFeedTitle").innerHTML = "Current Feed";
                     document.getElementById("currFeedList").innerHTML = "";
                     document.getElementById("currPostTitle").innerHTML = "Feed Details";
                     document.getElementById("feedDetails").innerHTML = "";
                     document.getElementById("deleteButton").style.visibility = "hidden";
+                    document.getElementById("lastUpdated").style.visibility = "hidden";
                 }
                 else {
                     var markUp = "<ol>"; //each feed will be a list item
@@ -44,35 +196,47 @@
                     for (var i = 0; i < mySubs.length; i++) {
                         var mySub = mySubs[i];
                     
-                        markUp += "<li><a href='javascript:openSub(" + i + ")'>" + mySub.id + "</a></li>";
+                        markUp += "<li><a href='javascript:openSub(" + i + ")' class='listItem'>" + mySub.id + "</a></li>";
                     }
                     
                     markUp += "</ol>";
 
                     document.getElementById("myFeedList").innerHTML = markUp;
                     
-                    openSub(0); //open first feed
+                    openSub(subIndexToOpen); //open feed
                 }
             });
         }
     
-        var addSub = function() {
-            //Prompt user for RSS feed URL
-            var link = prompt("Enter an RSS feed URL", "https://itunes.apple.com/us/rss/topaudiobooks/limit=10/xml");
-            
-            if (link != null && link.indexOf("/xml") > -1) {
-                link = link.replace("/xml", "/json"); //get JSON format
+        var showAddSub = function() {
+            //Prompt user for link
+            Ply.dialog("prompt", {
+                title: "RSS Feed URL",
+                form: {url: "URL"}
+            })
+            .done(function(ui) {
+                var data = ui.data;
+                
+                //Get link
+                var link = data.url;
+                
+                addSub(link);
+            });
+        }
+    
+        var addSub = function(link) {
+            if (link != null && (link.indexOf("/xml") > -1 || link.indexOf("/json") > -1)) {
+                link = link.replace("/xml", "/json"); //convert to JSON format if necessary
                 
                 var id = "No Title";
                 var url = "./getAllPosts?link=" + link;
                 
                 loadURL(url, function(data) {
                     var sub = JSON.parse(data).feed;
-                    console.log(sub);
                     
                     id = sub.title.label; //get feed title to display in myFeedList
                     
-                    url = "./addOrEditSub?user=" + theUser + "&id=" + id + "&link=" + link;
+                    url = "./addOrEditSub?user=" + user + "&id=" + id + "&link=" + link;
                     
                     loadURL(url, function(data) {
                         var res = data;
@@ -81,7 +245,7 @@
                             console.log("Error adding sub");
                         }
                         else {
-                            loadMySubs(); //refresh myFeedList
+                            loadMySubs(allSubs.length); //refresh myFeedList and open added feed
                         }
                     });
                 });
@@ -92,7 +256,7 @@
         }
     
         var deleteSub = function() {
-            var url = "./deleteSub?user=" + theUser + "&link=" + currentSubLink;
+            var url = "./deleteSub?user=" + user + "&link=" + currentSubLink;
             
             loadURL(url, function(data) {
                 var res = data;
@@ -101,62 +265,73 @@
                     console.log("Error deleting sub");
                 }
                 else {
-                    loadMySubs(); //refresh myFeedList
+                    loadMySubs(0); //refresh myFeedList
                 }
             });
         }
     
         var openSub = function(index) {
-            var subToOpen = allSubs[index];
-            var subLink = subToOpen.link;
-            
-            currentSubLink = subLink;
-            
-            var url = "./getAllPosts?link=" + currentSubLink;
-            
-            loadURL(url, function(data) {
-                var sub = JSON.parse(data).feed;
+            if (allSubs.length > 0) {
+                selectListItem(index, "myFeedList"); //show sub as selected
+        
+                var subToOpen = allSubs[index];
+                var subLink = subToOpen.link;
                 
-                currentSub = sub;
+                currentSubLink = subLink;
                 
-                document.getElementById("currFeedTitle").innerHTML = currentSub.title.label; //display feed title in header
+                var url = "./getAllPosts?link=" + currentSubLink;
                 
-                var posts = currentSub.entry; //get all posts in feed
-                
-                if (posts) {
-                    var numPosts = posts.length; //number of posts in feed
+                loadURL(url, function(data) {
+                    var sub = JSON.parse(data).feed;
+                    
+                    currentSub = sub;
                         
-                    if (numPosts == 0) {
-                        document.getElementById("currFeedList").innerHTML = "No posts";
+                    document.getElementById("currFeedTitle").innerHTML = currentSub.title.label; //display feed title in header
+                    
+                    //Display when feed was last updated
+                    var updated = currentSub.updated.label;
+                    document.getElementById("lastUpdated").style.visibility = "visible";
+                    document.getElementById("updated").innerHTML = moment(updated).fromNow();
+                    
+                    var posts = currentSub.entry; //get all posts in feed
+                    
+                    if (posts) {
+                        var numPosts = posts.length; //number of posts in feed
+                            
+                        if (numPosts == 0) {
+                            document.getElementById("currFeedList").innerHTML = "No posts";
+                        }
+                        else {
+                            var markUp = "<ol>"; //each post wll be a list item
+                            
+                            for (var i = 0; i < numPosts; i++) {
+                                var post = posts[i];
+                            
+                                markUp += "<li><a href='javascript:openPost(" + i + ")' class='listItem'>" + post.title.label + "</a></li>";
+                            }
+                            
+                            markUp += "</ol>";
+                            
+                            document.getElementById("currFeedList").innerHTML = markUp;
+                            
+                            openPost(0); //open first post
+                        }
                     }
                     else {
-                        var markUp = "<ol>"; //each post wll be a list item
-                        
-                        for (var i = 0; i < numPosts; i++) {
-                            var post = posts[i];
-                        
-                            markUp += "<li><a href='javascript:openPost(" + i + ")'>" + post.title.label + "</a></li>";
-                        }
-                        
-                        markUp += "</ol>";
-                        
-                        document.getElementById("currFeedList").innerHTML = markUp;
-                        
-                        openPost(0); //open first post
+                        //Clear out content
+                        document.getElementById("currFeedList").innerHTML = "No posts";
+                        document.getElementById("currPostTitle").innerHTML = "Feed Details";
+                        document.getElementById("feedDetails").innerHTML = "";
                     }
-                }
-                else {
-                    //Clear out content
-                    document.getElementById("currFeedList").innerHTML = "No posts";
-                    document.getElementById("currPostTitle").innerHTML = "Feed Details";
-                    document.getElementById("feedDetails").innerHTML = "";
-                }
-                
-                document.getElementById("deleteButton").style.visibility = "visible"; //show Delete Feed button
-            });
+                    
+                    document.getElementById("deleteButton").style.visibility = "visible"; //show Delete Feed button
+                });
+            }
         }
     
         var openPost = function(index) {
+            selectListItem(index, "currFeedList");
+            
             var postToOpen = currentSub.entry[index];
             
             //Get post name and display in header
@@ -216,6 +391,19 @@
             var markUp = markUp_image + markUp_artist + markUp_releaseDate + markUp_price + markUp_category + markUp_summary + markUp_fullLink;
             
             document.getElementById("feedDetails").innerHTML = markUp;
+        }
+    
+        var selectListItem = function(index, listName) {
+            var listItems = document.getElementById(listName).getElementsByClassName("listItem");
+            
+            for (var i = 0; i < listItems.length; i++) {
+                if (i == index) {
+                    listItems[i].style.color = "red";
+                }
+                else {
+                    listItems[i].style.color = "";
+                }
+            }
         }
     </script>
     
@@ -284,6 +472,20 @@
             text-decoration: none;
         }
     
+        #loginBar {
+            height: 15px;
+            padding: 10px;
+            background-color: white;
+            border: 1px solid;
+            border-radius: 5px;
+            border-color: #D0D0D0;
+        }
+    
+        #username {
+            float: right;
+            padding-right: 10px;
+        }
+    
         #myFeedWrapper, #currFeedWrapper {
             display: inline-block;
             vertical-align: top;
@@ -302,12 +504,17 @@
     </style>
 </head>
 <body onload="startUp()">
+    <div id="loginBar">
+        <div style="float: left;"><a id="signUpButton" href="javascript:showSignUp()" class="button">Sign Up</a></div>
+        <div style="float: right;"><a id="loginButton" href="javascript:showLogin()" class="button">Login</a></div>
+        <div id="username"></div>
+    </div>
     <div id="myFeedWrapper">
         <div class="header"><h1>My Feeds</h1></div>
         <div class="content">
-            <div class="centeredButton"><a href="javascript:addSub()" class="button">Add Feed</a></div>
+            <div class="centeredButton"><a href="javascript:showAddSub()" id="addButton" class="button" style="visibility: hidden;">Add Feed</a></div>
             </br>
-            <div id="myFeedList"> </div>
+            <div id="myFeedList">Login or sign up to view your feeds!</div>
         </div>
     </div>
     
@@ -315,6 +522,8 @@
         <div class="header"><h1 id="currFeedTitle">Current Feed</h1></div>
         <div class="content">
             <div class="centeredButton"><a href="javascript:deleteSub()" id="deleteButton" class="button" style="visibility: hidden;">Delete Feed</a></div>
+            </br></br>
+            <div id="lastUpdated" style="visibility: hidden;"><b>Last Updated: </b><div id="updated"></div></div>
             </br>
             <div id="currFeedList"> </div>
         </div>
