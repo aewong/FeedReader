@@ -1,5 +1,5 @@
-function authenticate(userID, pass, collection, db, fn) {
-	db.collection("users").findOne({userID: userID, password: pass}, function(err, user) {
+function authenticateUser(user, password, db, fn) {
+	db.collection("users").findOne({user: user, password: password}, function(err, user) {
 		if (err) {
 			return fn(err);
 		}
@@ -14,10 +14,10 @@ function authenticate(userID, pass, collection, db, fn) {
 	});
 }
 
-function restrict(req, res, db, fn) {
-    db.collection("users").findOne({userID: req.session.userID}, function(err, result) {
+function restrictUser(req, res, db, fn) {
+    db.collection("users").findOne({user: req.session.user}, function(err, result) {
         if (result) {
-            if (result.userID == req.session.userID && result.password == req.session.password) {
+            if (result.user == req.session.user && result.password == req.session.password) {
                 ret = true;
             }
             else {
@@ -34,5 +34,5 @@ function restrict(req, res, db, fn) {
     return fn(false);
 }
 		
-exports.authenticate = authenticate;
-exports.restrict = restrict;
+exports.authenticate = authenticateUser;
+exports.restrict = restrictUser;

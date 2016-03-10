@@ -38,21 +38,21 @@
         }
     
         var showLogin = function() {
-            Ply.factory("login", function(options, data, resolve) {
-                options.flags = {
-                    closeBtn: false,
-                    closeByEsc: true,
-                    closeByOverlay: true,
-                    visibleOverlayInStack: true
-                };
-
-                options.onaction = function(ui) {
-                    var data = ui.data;
-                    
-                    //Get email and password
-                    var tempUser = data.email;
-                    var password = data.password;
-                    
+            Ply.dialog("prompt", {
+                title: "Login",
+                form: {
+                    email: "Email",
+                    password: {hint: "Password", type: "password"}
+                }
+            })
+            .then((ui) => {
+                var data = ui.data;
+                        
+                //Get email and password
+                var tempUser = data.email;
+                var password = data.password;
+                
+                if (tempUser.length > 0 && password.length > 0) {
                     var url = "./login?user=" + tempUser + "&password=" + password;
                     
                     loadURL(url, function(data) {
@@ -60,78 +60,68 @@
                         
                         if (res == "1") {
                             user = tempUser;
+                            login();
                         }
                         else {
-                            console.log("Error logging in");
+                            Ply.dialog("alert", "Invalid email or password")
+                            .then((ui) => {
+                                showLogin();
+                            })
+                            .catch((ui) => {
+                                //Pressed cancel
+                            });
                         }
                     });
-                };
-
-                Ply.factory.use("base", options, {
-                    title: "Login",
-                    form: {
-                        email: "E-mail",
-                        password: {hint: "Password", type: "password"},
-                    },
-                    ok: "Enter",
-                    cancel: false
-                }, resolve);
-            });
-            
-            Ply.dialog("login").done(function(ui) {
-                login();
+                }
+            })
+            .catch((ui) => {
+                //Pressed cancel
             });
         }
     
         var showSignUp = function() {
-            Ply.factory("login", function(options, data, resolve) {
-                options.flags = {
-                    closeBtn: false,
-                    closeByEsc: true,
-                    closeByOverlay: true,
-                    visibleOverlayInStack: true
-                };
-
-                options.onaction = function(ui) {
-                    var data = ui.data;
+            Ply.dialog("prompt", {
+                title: "Sign Up",
+                form: {
+                    email: "Email",
+                    password: {hint: "Password", type: "password"}
+                }
+            })
+            .then((ui) => {
+                var data = ui.data;
                     
-                    //Get email and password
-                    var tempUser = data.email;
-                    var password = data.password;
-                    
-                    var url = "./addUser?user=" + tempUser + "&password=" + password;
+                //Get email and password
+                var tempUser = data.email;
+                var password = data.password;
+                
+                if (tempUser.length > 0 && password.length > 0) {
+                    var url = "./createUser?user=" + tempUser + "&password=" + password;
                     
                     loadURL(url, function(data) {
                         var res = data;
                         
                         if (res == "1") {
                             user = tempUser;
+                            login();
                         }
                         else {
-                            console.log("Error signing up");
+                            Ply.dialog("alert", "Email already in use")
+                            .then((ui) => {
+                                showSignUp();
+                            })
+                            .catch((ui) => {
+                                //Pressed cancel
+                            });
                         }
                     });
-                };
-
-                Ply.factory.use("base", options, {
-                    title: "Sign Up",
-                    form: {
-                        email: "E-mail",
-                        password: {hint: "Password", type: "password"},
-                    },
-                    ok: "Enter",
-                    cancel: false
-                }, resolve);
-            });
-
-            Ply.dialog("login").done(function(ui) {
-                login();
+                }
+            })
+            .catch((ui) => {
+                //Pressed cancel
             });
         }
     
         var login = function() {
-            user = "test"; //TEST
-            
             if (user != null) {
                 //Display user in top right corner
                 document.getElementById("username").innerHTML = user;
@@ -214,45 +204,53 @@
                 title: "RSS Feed URL",
                 form: {url: "URL"}
             })
-            .done(function(ui) {
+            .then((ui) => {
                 var data = ui.data;
                 
                 //Get link
                 var link = data.url;
                 
-                addSub(link);
+                if (link != null && (link.indexOf("/xml") > -1 || link.indexOf("/json") > -1)) {
+                    link = link.replace("/xml", "/json"); //convert to JSON format if necessary
+                    addSub(link);
+                }
+                else {
+                    Ply.dialog("alert", "Invalid RSS feed URL")
+                    .then((ui) => {
+                        showAddSub();
+                    })
+                    .catch((ui) => {
+                        //Pressed cancel
+                    });
+                }
+            })
+            .catch((ui) => {
+                //Pressed cancel
             });
         }
     
         var addSub = function(link) {
-            if (link != null && (link.indexOf("/xml") > -1 || link.indexOf("/json") > -1)) {
-                link = link.replace("/xml", "/json"); //convert to JSON format if necessary
+            var id = "No Title";
+            var url = "./getAllPosts?link=" + link;
+            
+            loadURL(url, function(data) {
+                var sub = JSON.parse(data).feed;
                 
-                var id = "No Title";
-                var url = "./getAllPosts?link=" + link;
+                id = sub.title.label; //get feed title to display in myFeedList
+                
+                url = "./addOrEditSub?user=" + user + "&id=" + id + "&link=" + link;
                 
                 loadURL(url, function(data) {
-                    var sub = JSON.parse(data).feed;
+                    var res = data;
                     
-                    id = sub.title.label; //get feed title to display in myFeedList
-                    
-                    url = "./addOrEditSub?user=" + user + "&id=" + id + "&link=" + link;
-                    
-                    loadURL(url, function(data) {
-                        var res = data;
-                        
-                        if (res == "0") {
-                            console.log("Error adding sub");
-                        }
-                        else {
-                            loadMySubs(allSubs.length); //refresh myFeedList and open added feed
-                        }
-                    });
+                    if (res == "0") {
+                        console.log("Error adding sub");
+                    }
+                    else {
+                        loadMySubs(allSubs.length); //refresh myFeedList and open added feed
+                    }
                 });
-            }
-            else {
-                console.log("Error adding feed: Invalid RSS feed URL");
-            }
+            });
         }
     
         var deleteSub = function() {

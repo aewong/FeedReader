@@ -1,4 +1,5 @@
 var express = require("express");
+var session = require("express-session");
 var userLib = require("./user.js");
 var app = express();
 var bodyParser = require("body-parser");
@@ -7,6 +8,8 @@ var methodOverride = require("method-override");
 var hostname = process.env.HOSTNAME || "localhost";
 var port = 8080;
 var db = require("./node_modules/mongoskin").db("mongodb://user:password@127.0.0.1:27017/RSSFeed");
+
+app.use(session({secret: "This is a secret"}));
 
 app.get("/", function(req, res) {
     res.redirect("/index.html");
@@ -110,7 +113,6 @@ function readURL(url, cb) {
         });
 
         res.on("end", function() {
-            console.log(JSON.parse(data))
             cb(data);
         })
     });

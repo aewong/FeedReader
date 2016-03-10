@@ -43,6 +43,7 @@ function getUser(req, res, db) {
     auth.restrict(req, res, db, function(ret) {
         if (ret) {
             var info = req.query;
+            
             db.collection("users").findOne({user: info.user}, function(err, result) {
                 if (result) {
                     var output = JSON.stringify(result);

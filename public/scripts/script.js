@@ -41,7 +41,7 @@ function loadURL(filename, callback) {
                 callback(allData);
             }
         };
-        
+                
         aXMLHttpRequest.send(null);
     }
     else {
