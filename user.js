@@ -1,8 +1,6 @@
 var auth = require("./authenticate.js");
 
 function loginUser(req, res, db) {
-    var info = req.query;
-    
     auth.authenticate(req.query.user, req.query.password, db, function(err, user) {
         if (user) {
             if (new Date().getTime() - req.session.lastLogin > 24 * 60 * 60 * 1000) {
@@ -28,10 +26,17 @@ function loginUser(req, res, db) {
 
 function addUser(req, res, db) {
     var info = req.query;
-    
-    db.collection("users").insert(info, function(err, result) {
-        if (result) {
-            res.send("1");
+
+    db.collection("users").findOne({user: info.user}, function(err, result) {
+        if (!result) {
+            db.collection("users").insert(info, function(err, result) {
+                if (result) {
+                    res.send("1");
+                }
+                else {
+                    res.send("0");
+                }
+            });
         }
         else {
             res.send("0");
