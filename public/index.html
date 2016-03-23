@@ -9,6 +9,7 @@
     <script src="scripts/offline.min.js"></script>
     <script src="scripts/moment.js"></script>
     <script src="scripts/moment-with-locales.js"></script>
+    <script src="scripts/md5.js"></script>
     <script src="scripts/script.js"></script>
     
     <script>
@@ -50,7 +51,7 @@
                         
                 //Get email and password
                 var tempUser = data.email;
-                var password = data.password;
+                var password = hex_md5(data.password);
                 
                 if (tempUser.length > 0 && password.length > 0) {
                     var url = "./login?user=" + tempUser + "&password=" + password;
@@ -92,7 +93,7 @@
                     
                 //Get email and password
                 var tempUser = data.email;
-                var password = data.password;
+                var password = hex_md5(data.password);
                 
                 if (tempUser.length > 0 && password.length > 0) {
                     var url = "./createUser?user=" + tempUser + "&password=" + password;
