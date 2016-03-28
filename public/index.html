@@ -489,15 +489,7 @@
             padding-right: 10px;
         }
     
-        /*.bigScreen #myFeedWrapper, #currFeedWrapper {
-            width: 25%;
-        }
-    
-        .smallScreen #myFeedWrapper, #currFeedWrapper {
-            width: 100%;
-        }*/
-    
-        #myFeedWrapper, #currFeedWrapper {
+        .bigScreen #myFeedWrapper, .bigScreen #currFeedWrapper {
             display: inline-block;
             vertical-align: top;
             height: 100%;
@@ -506,19 +498,38 @@
             border-color: #D0D0D0;
         }
     
-        /*.bigScreen #selFeedWrapper {
-            width: 45%;
+        .smallScreen #myFeedWrapper, .smallScreen #currFeedWrapper {
+            position: relative;
+            height: 100%;
+            width: 100%;
+            border-color: #D0D0D0;
         }
     
-        .smallScreen #selFeedWrapper {
-            width: 100%;
-        }*/
+        .smallScreen #currFeedWrapper {
+            top: -100%;
+            visibility: hidden;
+        }
     
-        #selFeedWrapper {
+        .bigScreen #selFeedWrapper {
             display: inline-block;
             vertical-align: top;
             height: 100%;
             width: 45%;
+        }
+    
+        .iPad #selFeedWrapper {
+            display: inline-block;
+            vertical-align: top;
+            height: 100%;
+            width: 44.5%;
+        }
+    
+        .smallScreen #selFeedWrapper {
+            position: relative;
+            top: -200%;
+            height: 100%;
+            width: 100%;
+            visibility: hidden;
         }
     </style>
 </head>
