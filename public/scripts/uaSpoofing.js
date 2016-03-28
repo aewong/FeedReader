@@ -12,7 +12,7 @@ var ENV = {
     }
 }
 
-function spoofUserAent() {
+function spoofUserAgent() {
     var agent = navigator.userAgent.toLowerCase();
 
     if (agent.indexOf("iphone") != -1 || agent.indexOf("ipod") != -1) {
@@ -60,4 +60,14 @@ function spoofUserAent() {
     else {
         ENV.screen.small = false;
     }
+    
+    assignClassNames();
   }
+
+function assignClassNames() {
+    var cn = "";
+    
+    //TODO
+    
+    $(body).addClass(cn);
+}
