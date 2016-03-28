@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
     <title>Simple RSS Feed Reader</title>
     
     <script src="scripts/jquery-2.2.1.min.js"></script>
@@ -20,6 +22,7 @@
         var currentSubLink = null; //link for current feed that is open
 
         var startUp = function() {
+            spoofUserAgent();
             checkBrowsers();
             showLogin();
         }

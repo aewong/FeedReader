@@ -65,9 +65,31 @@ function spoofUserAgent() {
   }
 
 function assignClassNames() {
-    var cn = "";
+    var classNames = "";
     
-    //TODO
+    if (ENV.device.touchSupport) {
+        classNames += "touchSupport";
+    }
+    else {
+        classNames += "mouseSupport";
+    }
     
-    $(body).addClass(cn);
+    if (ENV.screen.small) {
+        classNames += " smallScreen";
+    }
+    else {
+        classNames += " bigScreen";
+    }
+    
+    if (ENV.device.iOS) {
+        classNames += " iOS";
+    }
+    else if (ENV.device.android) {
+        classNames += " android";
+    }
+    else if (ENV.device.iPad) {
+        classNames += " iPad";
+    }
+    
+    $("body").addClass(classNames);
 }
