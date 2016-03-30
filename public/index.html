@@ -20,9 +20,15 @@
         var allSubs = null;
         var currentSub = null; //current feed that is open
         var currentSubLink = null; //link for current feed that is open
+        var currentPage = -1; //current page displayed (for small screen)
 
         var startUp = function() {
             spoofUserAgent();
+            
+            if (ENV.screen.small) {
+                currentPage = 0;
+            }
+            
             checkBrowsers();
             showLogin();
         }
@@ -198,7 +204,9 @@
 
                     document.getElementById("myFeedList").innerHTML = markUp;
                     
-                    openSub(subIndexToOpen); //open feed
+                    if (!ENV.screen.small) {
+                        openSub(subIndexToOpen); //open feed
+                    }
                 }
             });
         }
@@ -277,6 +285,12 @@
             if (allSubs.length > 0) {
                 selectListItem(index, "myFeedList"); //show sub as selected
         
+                if (ENV.screen.small) {
+                    currentPage = 1;
+                    $("#myFeedWrapper").fadeOut();
+                    $("#currFeedWrapper").fadeIn();
+                }
+        
                 var subToOpen = allSubs[index];
                 var subLink = subToOpen.link;
                 
@@ -293,7 +307,11 @@
                     
                     //Display when feed was last updated
                     var updated = currentSub.updated.label;
-                    document.getElementById("lastUpdated").style.visibility = "visible";
+                        
+                    if (!ENV.screen.small || currentPage == 1) {
+                        document.getElementById("lastUpdated").style.visibility = "visible";
+                    }
+                        
                     document.getElementById("updated").innerHTML = moment(updated).fromNow();
                     
                     var posts = currentSub.entry; //get all posts in feed
@@ -316,8 +334,10 @@
                             markUp += "</ol>";
                             
                             document.getElementById("currFeedList").innerHTML = markUp;
-                            
-                            openPost(0); //open first post
+                        
+                            if (!ENV.screen.small) {
+                                openPost(0); //open first post
+                            }
                         }
                     }
                     else {
@@ -327,13 +347,21 @@
                         document.getElementById("feedDetails").innerHTML = "";
                     }
                     
-                    document.getElementById("deleteButton").style.visibility = "visible"; //show Delete Feed button
+                    if (!ENV.screen.small || currentPage == 1) {
+                        document.getElementById("deleteButton").style.visibility = "visible"; //show Delete Feed button
+                    }
                 });
             }
         }
     
         var openPost = function(index) {
             selectListItem(index, "currFeedList");
+            
+            if (ENV.screen.small) {
+                currentPage = 2;
+                $("#currFeedWrapper").fadeOut();
+                $("#selFeedWrapper").fadeIn();
+            }
             
             var postToOpen = currentSub.entry[index];
             
@@ -506,8 +534,9 @@
         }
     
         .smallScreen #currFeedWrapper {
-            top: -100%;
-            visibility: hidden;
+            /*top: -100%;
+            visibility: hidden;*/
+            display: none;
         }
     
         .bigScreen #selFeedWrapper {
@@ -526,10 +555,11 @@
     
         .smallScreen #selFeedWrapper {
             position: relative;
-            top: -200%;
+            /*top: -200%;*/
             height: 100%;
             width: 100%;
-            visibility: hidden;
+            /*visibility: hidden;*/
+            display: none;
         }
     </style>
 </head>
