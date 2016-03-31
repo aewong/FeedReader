@@ -142,7 +142,7 @@
                 document.getElementById("loginButton").href = "javascript:logout()";
                 
                 //Hide sign up button
-                document.getElementById("signUpButton").style.visibility = "hidden";
+                document.getElementById("signUpButton").style.display = "none";
                 
                 //Show add button and feed list
                 document.getElementById("addButton").style.visibility = "visible";
@@ -161,13 +161,47 @@
             document.getElementById("loginButton").href = "javascript:showLogin()";
             
             //Show sign up button
-            document.getElementById("signUpButton").style.visibility = "visible";
+            document.getElementById("signUpButton").style.display = "";
+            
+            if (ENV.screen.small) {
+                //Hide back button
+                document.getElementById("backButton").style.display = "none";
+            }
             
             //Hide add button and feed list
             document.getElementById("addButton").style.visibility = "hidden";
             document.getElementById("myFeedList").innerHTML = "Login or sign up to view your feeds!";
             
             loadMySubs(-1); //no feeds to open
+        }
+    
+        var pressedBack = function() {
+            if (currentPage == 1) {
+                loadPage(0);
+            }
+            else if (currentPage == 2) {
+                loadPage(1);
+            }
+        }
+    
+        var loadPage = function(index) {
+            currentPage = index;
+            
+            if (currentPage == 0) {
+                $("#currFeedWrapper").fadeOut();
+                $("#myFeedWrapper").fadeIn();
+                
+                selectListItem(-1, "myFeedWrapper"); //deselect item
+                
+                //Hide back button
+                document.getElementById("backButton").style.display = "none";
+            }
+            else if (currentPage == 1) {
+                $("#selFeedWrapper").fadeOut();
+                $("#currFeedWrapper").fadeIn();
+                
+                selectListItem(-1, "currFeedWrapper"); //deselect item
+            }
         }
     
         var loadMySubs = function(subIndexToOpen) {
@@ -276,6 +310,10 @@
                     console.log("Error deleting sub");
                 }
                 else {
+                    if (ENV.screen.small) {
+                        loadPage(0);
+                    }
+                    
                     loadMySubs(0); //refresh myFeedList
                 }
             });
@@ -287,8 +325,12 @@
         
                 if (ENV.screen.small) {
                     currentPage = 1;
+                    
                     $("#myFeedWrapper").fadeOut();
                     $("#currFeedWrapper").fadeIn();
+                    
+                    //Show back button
+                    document.getElementById("backButton").style.display = "";
                 }
         
                 var subToOpen = allSubs[index];
@@ -534,8 +576,6 @@
         }
     
         .smallScreen #currFeedWrapper {
-            /*top: -100%;
-            visibility: hidden;*/
             display: none;
         }
     
@@ -555,16 +595,15 @@
     
         .smallScreen #selFeedWrapper {
             position: relative;
-            /*top: -200%;*/
             height: 100%;
             width: 100%;
-            /*visibility: hidden;*/
             display: none;
         }
     </style>
 </head>
 <body onload="startUp()">
     <div id="loginBar">
+        <div style="float: left;"><a id="backButton" href="javascript:pressedBack()" class="button" style="display: none;">Back</a></div>
         <div style="float: left;"><a id="signUpButton" href="javascript:showSignUp()" class="button">Sign Up</a></div>
         <div style="float: right;"><a id="loginButton" href="javascript:showLogin()" class="button">Login</a></div>
         <div id="username"></div>
